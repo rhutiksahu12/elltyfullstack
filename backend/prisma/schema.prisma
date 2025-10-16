@@ -1,0 +1,68 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String      @id @default(cuid())
+  username   String      @unique
+  password   String
+  createdAt  DateTime    @default(now())
+  trees      Tree[]
+  operations Operation[]
+
+  @@index([username])
+}
+
+model Tree {
+  id          String      @id @default(cuid())
+  startNumber Float
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime    @default(now())
+  operations  Operation[]
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Operation {
+  id            String      @id @default(cuid())
+  treeId        String
+  tree          Tree        @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentId      String?
+  parent        Operation?  @relation("OperationTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children      Operation[] @relation("OperationTree")
+  operationType String
+  operand       Float
+  result        Float
+  createdAt     DateTime    @default(now())
+
+  @@index([treeId])
+  @@index([parentId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model TokenBlacklist {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([expiresAt])
+}
